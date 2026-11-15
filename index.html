@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- build: v3.6 / 2026-11-15 / 当前轮默认折叠 / 自绘弹窗版 -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -73,6 +74,7 @@
   .round.cur{border-style:dashed;border-color:#94a3b8;background:#f8fafc}
   .round.cur .round-body{border-top:1px solid #e2e8f0}
   .cur-tag{display:inline-block;font-size:11px;line-height:16px;color:#0369a1;background:#e0f2fe;border:1px solid #bae6fd;border-radius:6px;padding:0 6px;margin-left:6px;vertical-align:1px}
+  .cur-hint{color:var(--blue);font-size:11px;font-weight:600;margin-left:6px}
   .round-sum{margin-top:6px;font-size:13px;color:#475569}
   .current-title{font-size:13px;color:#475569;font-weight:bold;margin-bottom:8px}
   /* ===== 自绘弹窗：不依赖 WebView 的 alert/confirm ===== */
@@ -92,7 +94,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>投注盈亏记账 <span class="ver">v3.5</span></h1>
+  <h1>投注盈亏记账 <span class="ver">v3.6</span></h1>
   <div class="risk">说明：本工具仅用于记录每笔投注与每轮盈亏，不提供任何投注建议。输后继续加注（追损）在本金或限额有限时可能造成大额亏损，请理性参与、量力而行。</div>
   <!-- 总览 -->
   <div class="stats">
@@ -312,10 +314,10 @@
     if(!cur.length) return '';
     var pr = profit(cur);
     var rk = key+'_cur';
-    var copen = ui.round[rk] === undefined ? true : !!ui.round[rk];
+    var copen = !!ui.round[rk];
     return '<div class="round cur'+(copen?' open':'')+'" data-plan="'+key+'" data-i="cur">'
       + '<div class="round-head">'
-      + '<span class="left">第 '+(p.rounds.length+1)+' 轮<span class="cur-tag">进行中</span> · '+cur.length+' 笔</span>'
+      + '<span class="left">第 '+(p.rounds.length+1)+' 轮<span class="cur-tag">进行中</span> · '+cur.length+' 笔<span class="cur-hint">'+(copen?'收起 ▲':'明细 ▼')+'</span></span>'
       + '<span class="prof '+cls(pr)+'">'+fmt(pr)+'</span>'
       + '</div>'
       + '<div class="round-body">'
