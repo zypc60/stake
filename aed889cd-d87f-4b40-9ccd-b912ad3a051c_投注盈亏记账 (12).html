@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>投注盈亏记账</title>
+<style>
+  :root{
+    --bg:#f4f5f7; --card:#fff; --line:#e6e8ee; --text:#1f2329; --sub:#6b7280;
+    --green:#16a34a; --red:#dc2626; --blue:#2563eb;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.5}
+  .wrap{max-width:480px;margin:0 auto;padding:16px 14px 40px}
+  h1{font-size:19px;font-weight:700;margin-bottom:4px}
+  .risk{font-size:12px;color:var(--sub);background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:8px 10px;margin:10px 0 16px}
+  .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
+  .stat .label{font-size:12px;color:var(--sub);margin-bottom:4px}
+  .stat .value{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+  .pos{color:var(--green)} .neg{color:var(--red)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:14px}
+  .card h2{font-size:15px;font-weight:700;margin-bottom:10px}
+  label{display:block;font-size:12px;color:var(--sub);margin:8px 0 4px}
+  input,select{width:100%;height:42px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font-size:15px;background:#fff;color:var(--text)}
+  input:focus,select:focus{outline:none;border-color:var(--blue)}
+  .seg{display:flex;gap:10px}
+  .seg label{flex:1;margin:0}
+  .seg input[type=radio]{display:none}
+  .seg .opt{display:flex;align-items:center;justify-content:center;height:42px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-weight:600}
+  .seg input:checked + .opt-plan{background:var(--blue);border-color:var(--blue);color:#fff}
+  .seg input:checked + .opt-win{background:var(--green);border-color:var(--green);color:#fff}
+  .seg input:checked + .opt-lose{background:var(--red);border-color:var(--red);color:#fff}
+  .btn{width:100%;height:46px;border:none;border-radius:12px;background:var(--blue);color:#fff;font-size:16px;font-weight:700;cursor:pointer;margin-top:12px}
+  .btn:active{opacity:.85}
+  .btn-ghost{background:#fff;color:var(--sub);border:1px solid var(--line);height:38px;font-size:13px;font-weight:600;margin-top:8px}
+  .btn-row{display:flex;gap:10px}
+  .btn-row .btn{margin-top:0;flex:1}
+  .btn-ghost.danger{color:var(--red);border-color:#fecaca}
+  .cur-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+  .cur-meta .m{background:#f8f9fb;border-radius:10px;padding:8px;text-align:center}
+  .cur-meta .m .k{font-size:11px;color:var(--sub)}
+  .cur-meta .m .v{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+  .hint{font-size:12px;color:var(--sub);margin-top:8px}
+  .plan-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+  .plan-head .name{font-size:15px;font-weight:700}
+  .plan-head .prof{font-weight:700;font-variant-numeric:tabular-nums}
+  /* 盈利拆分栏 */
+  .profit-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+  .profit-bar .pb{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 8px;text-align:center}
+  .profit-bar .pb .k{font-size:11px;color:var(--sub);margin-bottom:2px}
+  .profit-bar .pb .v{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+  /* 历史轮次折叠条 */
+  .hist-head{display:flex;align-items:center;justify-content:space-between;padding:10px 2px 2px;margin-top:6px;border-top:1px solid var(--line);cursor:pointer;font-size:13px;color:var(--sub)}
+  .hist-head .arrow{color:var(--blue);font-weight:600;font-size:12px}
+  .hist-body{margin-top:4px}
+  .round{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
+  .round-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer}
+  .round-head .left{font-size:13px;color:var(--sub)}
+  .round-head .prof{font-weight:700;font-variant-numeric:tabular-nums}
+  .round-body{border-top:1px solid var(--line);display:none;padding:6px 14px 10px}
+  .round.open .round-body{display:block}
+  .bet{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px dashed var(--line)}
+  .bet:last-child{border-bottom:none}
+  .bet .meta{color:var(--sub);font-size:11px}
+  .del{background:none;border:none;color:var(--red);font-size:12px;cursor:pointer;padding:4px}
+  .empty{text-align:center;color:var(--sub);font-size:13px;padding:18px 0}
+  .foot{font-size:11px;color:var(--sub);text-align:center;margin-top:20px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>投注盈亏记账</h1>
+  <div class="risk">说明：本工具仅用于记录每笔投注与每轮盈亏，不提供任何投注建议。输后继续加注（追损）在本金或限额有限时可能造成大额亏损，请理性参与、量力而行。</div>
+
+  <!-- 总览 -->
+  <div class="stats">
+    <div class="stat"><div class="label">累计总盈亏</div><div class="value" id="totalProfit">0.00</div></div>
+    <div class="stat"><div class="label">已完成轮次</div><div class="value" id="roundCount">0</div></div>
+    <div class="stat"><div class="label">盈利轮胜率</div><div class="value" id="winRate">—</div></div>
+    <div class="stat"><div class="label">进行中轮次</div><div class="value" id="activeCount">0</div></div>
+  </div>
+
+  <!-- 盈利拆分 -->
+  <div class="profit-bar">
+    <div class="pb"><div class="k">单关盈利</div><div class="v" id="singleProfit">0.00</div></div>
+    <div class="pb"><div class="k">双关盈利</div><div class="v" id="doubleProfit">0.00</div></div>
+    <div class="pb"><div class="k">单双关总盈利</div><div class="v" id="sumProfit">0.00</div></div>
+  </div>
+
+  <!-- 下注表单 -->
+  <div class="card">
+    <h2>记一笔</h2>
+    <form id="betForm">
+      <label>方案</label>
+      <div class="seg">
+        <label><input type="radio" name="plan" value="single" checked><span class="opt opt-plan">单关</span></label>
+        <label><input type="radio" name="plan" value="double"><span class="opt opt-plan">双关</span></label>
+      </div>
+
+      <div class="row" style="display:flex;gap:10px">
+        <div style="flex:1;min-width:0">
+          <label>日期</label>
+          <input type="date" id="betDate">
+        </div>
+        <div style="flex:1;min-width:0">
+          <label>投注金额（元）</label>
+          <input type="number" id="amount" min="0" step="0.01" placeholder="如 10" required>
+        </div>
+      </div>
+
+      <label>结果</label>
+      <div class="seg">
+        <label><input type="radio" name="result" value="win" checked><span class="opt opt-win">赢</span></label>
+        <label><input type="radio" name="result" value="lose"><span class="opt opt-lose">负</span></label>
+      </div>
+
+      <label id="payoutLabel">赢后到手金额（含本金，元）</label>
+      <input type="number" id="payout" min="0" step="0.01" placeholder="赢后实际到手总额">
+
+      <label>备注（可选）</label>
+      <input type="text" id="note" maxlength="30" placeholder="场次 / 说明">
+
+      <button type="submit" class="btn">记一笔</button>
+      <div class="hint">选「赢」后该方案本轮自动结算并开启新一轮；选「负」则留在当前轮继续累计。两个方案各自独立记账。</div>
+    </form>
+  </div>
+
+  <!-- 两个方案区块（JS 填充） -->
+  <div id="plans"></div>
+
+  <div class="card">
+    <div class="btn-row">
+      <button type="button" class="btn btn-ghost" id="exportBtn">导出 CSV</button>
+      <button type="button" class="btn btn-ghost" id="importBtn">导入 CSV</button>
+      <button type="button" class="btn btn-ghost danger" id="clearAll">清空全部</button>
+    </div>
+    <input type="file" id="importFile" accept=".csv,text/csv" hidden>
+    <div class="hint">导出的 CSV 可用 Excel / WPS 直接打开编辑；导入会覆盖当前全部记录。</div>
+  </div>
+
+  <div class="foot">数据仅保存在本机浏览器（localStorage），清除浏览器数据会一并删除。</div>
+</div>
+
+<script>
+(function(){
+  var LS_KEY = 'bet_profit_tracker_v2';
+  var WD = ['周日','周一','周二','周三','周四','周五','周六'];
+  var PLAN_META = { single:{name:'单关'}, double:{name:'双关'} };
+
+  function pad(x){ return String(x).padStart(2,'0'); }
+  function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+  function weekdayOf(dateStr){ var d=new Date(dateStr+'T00:00:00'); return WD[d.getDay()]; }
+
+  function freshPlan(){ return { current:{bets:[]}, rounds:[] }; }
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(LS_KEY);
+      if(raw){
+        var s = JSON.parse(raw);
+        if(s && s.plans){ return s; }
+        // 兼容迁移旧版 v1 数据到单关
+        if(s && s.current){
+          return { plans:{ single:{ current:s.current, rounds:s.rounds||[] }, double:freshPlan() } };
+        }
+      }
+    }catch(e){}
+    return { plans:{ single:freshPlan(), double:freshPlan() } };
+  }
+  var state = load();
+  // 折叠状态（仅本次会话内保持）：hist 控制方案历史轮次列表，round 控制单轮明细
+  var ui = { hist:{ single:false, double:false }, round:{} };
+
+  function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+  function n(x){ var v = parseFloat(x); return isNaN(v) ? 0 : v; }
+  function fmt(x){ return (x<0?'-':'') + Math.abs(x).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function cls(x){ return x>0?'pos':(x<0?'neg':''); }
+  function invested(bets){ return bets.reduce(function(s,b){return s+n(b.amount);},0); }
+  function returned(bets){ return bets.reduce(function(s,b){return s+(b.result==='win'?n(b.payout):0);},0); }
+  function profit(bets){ return returned(bets)-invested(bets); }
+  function planTotal(p){ return profit(p.current.bets) + p.rounds.reduce(function(s,r){return s+profit(r.bets);},0); }
+  function el(id){ return document.getElementById(id); }
+  function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+  function planBlock(key){
+    var p = state.plans[key], meta = PLAN_META[key];
+    var cur = p.current.bets;
+    var curInv = invested(cur), curRet = returned(cur), curProf = profit(cur);
+
+    var html = '<div class="card"><div class="plan-head">'
+      + '<span class="name">'+meta.name+'</span>'
+      + '<span class="prof '+cls(planTotal(p))+'">合计 '+fmt(planTotal(p))+'</span>'
+      + '</div>';
+
+    html += '<div class="cur-meta">'
+      + '<div class="m"><div class="k">本轮投入</div><div class="v">'+fmt(curInv)+'</div></div>'
+      + '<div class="m"><div class="k">本轮回收</div><div class="v">'+fmt(curRet)+'</div></div>'
+      + '<div class="m"><div class="k">本轮盈亏 / 笔数</div><div class="v '+cls(curProf)+'">'+fmt(curProf)+' / '+cur.length+'</div></div>'
+      + '</div>';
+
+    // 历史轮次：整体可折叠（默认收起），展开后每轮还可再折叠看明细
+    var open = !!ui.hist[key];
+    html += '<div class="hist-head" data-hist="'+key+'">'
+      + '<span>历史轮次（'+p.rounds.length+' 轮）</span>'
+      + '<span class="arrow">'+(open?'收起 ▲':'展开 ▼')+'</span>'
+      + '</div>';
+
+    if(open){
+      if(!p.rounds.length){
+        html += '<div class="empty">暂无已完成轮次</div>';
+      }else{
+        html += '<div class="hist-body">';
+        p.rounds.forEach(function(r,i){
+          var pr = profit(r.bets);
+          var rk = key+'_'+i;
+          var ropen = !!ui.round[rk];
+          html += '<div class="round'+(ropen?' open':'')+'" data-plan="'+key+'" data-i="'+i+'">'
+            + '<div class="round-head">'
+            + '<span class="left">第 '+(i+1)+' 轮 · '+r.bets.length+' 笔 · '+r.closedAt+'</span>'
+            + '<span class="prof '+cls(pr)+'">'+fmt(pr)+'</span>'
+            + '</div><div class="round-body">';
+          r.bets.forEach(function(b){
+            var tag = b.result==='win'?'<span class="pos">赢</span>':'<span class="neg">负</span>';
+            var dt = b.date+' '+b.weekday+(b.time?' '+b.time:'');
+            html += '<div class="bet"><div>投注 '+fmt(b.amount)+' 元 · '+tag
+              + (b.note?'<div class="meta">'+esc(b.note)+'</div>':'')
+              + '<div class="meta">'+esc(dt)+'</div></div>'
+              + '<div>'+(b.result==='win'?'到手 '+fmt(b.payout):'—')+'</div></div>';
+          });
+          html += '<div style="text-align:right"><button class="del" data-plan="'+key+'" data-del="'+i+'">删除本轮</button></div>';
+          html += '</div></div>';
+        });
+        html += '</div>';
+      }
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function render(){
+    // 总览
+    var keys = ['single','double'];
+    var totalProf = 0, roundN = 0, winN = 0, activeN = 0;
+    keys.forEach(function(k){
+      var p = state.plans[k];
+      totalProf += planTotal(p);
+      roundN += p.rounds.length;
+      winN += p.rounds.filter(function(r){return profit(r.bets)>0;}).length;
+      if(p.current.bets.length) activeN++;
+    });
+    var rate = roundN ? Math.round(winN/roundN*100)+'%' : '—';
+
+    var singleProf = planTotal(state.plans.single);
+    var doubleProf = planTotal(state.plans.double);
+
+    el('totalProfit').textContent = fmt(totalProf);
+    el('totalProfit').className = 'value '+cls(totalProf);
+    el('roundCount').textContent = roundN;
+    el('winRate').textContent = rate;
+    el('activeCount').textContent = activeN;
+
+    el('singleProfit').textContent = fmt(singleProf);
+    el('singleProfit').className = 'v '+cls(singleProf);
+    el('doubleProfit').textContent = fmt(doubleProf);
+    el('doubleProfit').className = 'v '+cls(doubleProf);
+    el('sumProfit').textContent = fmt(totalProf);
+    el('sumProfit').className = 'v '+cls(totalProf);
+
+    el('plans').innerHTML = planBlock('single') + planBlock('double');
+    save();
+  }
+
+  // 日期默认今天
+  el('betDate').value = todayStr();
+
+  // 结果切换：赢才填到手金额
+  var payoutInput = el('payout');
+  function syncResult(){
+    var isWin = document.querySelector('input[name=result]:checked').value==='win';
+    payoutInput.disabled = !isWin;
+    el('payoutLabel').style.opacity = isWin?'1':'.5';
+  }
+  document.querySelectorAll('input[name=result]').forEach(function(r){
+    r.addEventListener('change', syncResult);
+  });
+  syncResult();
+
+  el('betForm').addEventListener('submit',function(e){
+    e.preventDefault();
+    var amount = n(el('amount').value);
+    if(amount<=0){ alert('请填写大于 0 的投注金额'); return; }
+    var planKey = document.querySelector('input[name=plan]:checked').value;
+    var result = document.querySelector('input[name=result]:checked').value;
+    var payout = n(payoutInput.value);
+    if(result==='win' && payout<0){ alert('到手金额不能为负'); return; }
+    var dateStr = el('betDate').value || todayStr();
+    var note = el('note').value.trim();
+
+    var bet = {
+      amount:amount, result:result, payout:result==='win'?payout:0, note:note,
+      date:dateStr, weekday:weekdayOf(dateStr),
+      time:new Date().toLocaleTimeString('zh-CN',{hour12:false})
+    };
+    var plan = state.plans[planKey];
+    plan.current.bets.push(bet);
+
+    if(result==='win'){
+      plan.rounds.push({ bets:plan.current.bets, closedAt:dateStr+' '+weekdayOf(dateStr) });
+      plan.current = { bets:[] };
+    }
+    el('amount').value=''; payoutInput.value=''; el('note').value='';
+    render();
+  });
+
+  el('plans').addEventListener('click',function(e){
+    // 方案历史轮次整体折叠
+    var hh = e.target.closest('[data-hist]');
+    if(hh){
+      var k = hh.dataset.hist;
+      ui.hist[k] = !ui.hist[k];
+      render();
+      return;
+    }
+    // 单轮明细折叠
+    var head = e.target.closest('.round-head');
+    if(head){
+      var card = head.parentElement;
+      var rk = card.dataset.plan + '_' + card.dataset.i;
+      ui.round[rk] = !ui.round[rk];
+      card.classList.toggle('open');
+      return;
+    }
+    var del = e.target.closest('[data-del]');
+    if(del){
+      if(confirm('确定删除这一轮记录？')){
+        state.plans[del.dataset.plan].rounds.splice(Number(del.dataset.del),1);
+        ui.round = {};   // 轮次序号变了，重置明细展开状态
+        render();
+      }
+    }
+  });
+
+  // ================= CSV 导入导出 =================
+  function csvField(v){ v = String(v==null?'':v); return '"' + v.replace(/"/g,'""') + '"'; }
+
+  function parseCSVLine(line){
+    var out = [], cur = '', inQ = false;
+    for(var i=0;i<line.length;i++){
+      var c = line[i];
+      if(inQ){
+        if(c==='"'){
+          if(line[i+1]==='"'){ cur+='"'; i++; } else { inQ=false; }
+        } else { cur+=c; }
+      } else {
+        if(c==='"'){ inQ=true; }
+        else if(c===','){ out.push(cur); cur=''; }
+        else { cur+=c; }
+      }
+    }
+    out.push(cur);
+    return out;
+  }
+
+  function mapPlan(s){
+    s = String(s||'').trim();
+    if(s==='单关'||s==='single') return 'single';
+    if(s==='双关'||s==='double') return 'double';
+    return null;
+  }
+  function mapResult(s){ s = String(s||'').trim(); return (s==='win'||s==='赢')?'win':'lose'; }
+
+  function csvRow(name, b, status){
+    return [csvField(name), csvField(b.date), csvField(b.weekday), csvField(b.time||''),
+      csvField(b.result==='win'?'赢':'负'), csvField(b.amount), csvField(b.payout),
+      csvField(b.note||''), csvField(status)].join(',') + '\n';
+  }
+
+  function exportCSV(){
+    var csv = '﻿' + ['方案','日期','星期','时间','结果','投注金额','到手金额','备注','状态'].join(',') + '\n';
+    ['single','double'].forEach(function(k){
+      var p = state.plans[k], name = PLAN_META[k].name;
+      p.rounds.forEach(function(r){ r.bets.forEach(function(b){ csv += csvRow(name, b, '已结算'); }); });
+      p.current.bets.forEach(function(b){ csv += csvRow(name, b, '进行中'); });
+    });
+    var blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var d = new Date();
+    a.href = url;
+    a.download = '投注记录_' + d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + '.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function importCSV(file){
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var txt = ev.target.result.replace(/^﻿/, '');
+      var lines = txt.split(/\r\n|\n|\r/);
+      var ns = { plans:{ single:freshPlan(), double:freshPlan() } };
+      var groups = { single:{}, double:{} };
+      var cnt = 0;
+      lines.forEach(function(line, idx){
+        if(!line.trim()) return;
+        var arr = parseCSVLine(line);
+        if(idx===0 && /方案|日期/.test(arr[0]||'')) return;   // 跳过表头
+        var pk = mapPlan(arr[0]); if(!pk) return;
+        var date = (arr[1]||'').trim(); if(!date) return;
+        var weekday = (arr[2]||'').trim() || weekdayOf(date);
+        var time = (arr[3]||'').trim();
+        var result = mapResult(arr[4]);
+        var amount = n(arr[5]); if(amount<=0) return;
+        var payout = n(arr[6]);
+        var note = (arr[7]||'').trim();
+        var status = (arr[8]||'已结算').trim();
+        var bet = { amount:amount, result:result, payout:result==='win'?payout:0, note:note,
+                    date:date, weekday:weekday, time:time };
+        if(status==='进行中'){
+          ns.plans[pk].current.bets.push(bet);
+        } else {
+          if(!groups[pk][date]){
+            groups[pk][date] = { bets:[], closedAt:date+' '+weekday };
+            ns.plans[pk].rounds.push(groups[pk][date]);
+          }
+          groups[pk][date].bets.push(bet);
+        }
+        cnt++;
+      });
+      state = ns;
+      ui.round = {}; ui.hist = { single:false, double:false };
+      save(); render();
+      alert('导入完成，共 '+cnt+' 条记录');
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
+
+  el('exportBtn').addEventListener('click', exportCSV);
+  el('importBtn').addEventListener('click', function(){ el('importFile').click(); });
+  el('importFile').addEventListener('change', function(e){
+    var f = e.target.files[0];
+    if(!f) return;
+    if(!confirm('导入将覆盖当前全部记录，确定继续？')){ e.target.value=''; return; }
+    importCSV(f);
+    e.target.value='';
+  });
+
+  el('clearAll').addEventListener('click',function(){
+    if(confirm('确定清空全部历史与当前轮记录？此操作不可恢复。')){
+      state = { plans:{ single:freshPlan(), double:freshPlan() } };
+      render();
+    }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
