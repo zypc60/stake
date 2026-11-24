@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- build: v3.6 / 2026-11-15 / 当前轮默认折叠 / 自绘弹窗版 -->
+<!-- build: v3.9 / 2026-11-24 / 倍投回本参考表 + 历史折叠复位 + 计算器清空 -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -77,6 +77,38 @@
   .cur-hint{color:var(--blue);font-size:11px;font-weight:600;margin-left:6px}
   .round-sum{margin-top:6px;font-size:13px;color:#475569}
   .current-title{font-size:13px;color:#475569;font-weight:bold;margin-bottom:8px}
+  /* ===== 注单操作：编辑 / 删除 ===== */
+  .bet{flex-direction:column;gap:2px}
+  .bet-main{display:flex;justify-content:space-between}
+  .bet-actions{display:flex;gap:6px;margin-top:4px}
+  .mini-btn{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;color:#475569;font-size:12px;padding:4px 10px;cursor:pointer}
+  .mini-btn:active{opacity:.85}
+  .mini-btn.danger{color:#b91c1c;background:#fef2f2;border-color:#fecaca}
+  .edit-sheet{max-width:430px}
+  .edit-sheet h3{font-size:15px;font-weight:700;margin-bottom:10px}
+  .edit-sheet .row2{margin:6px 0}
+  /* ===== 计算器二级页面 ===== */
+  .calc-page{display:none;position:fixed;inset:0;background:var(--bg);z-index:9000;overflow:auto;-webkit-overflow-scrolling:touch}
+  body.calc-open .wrap{display:none}
+  .calc-page.show{display:block}
+  .calc-inner{max-width:480px;margin:0 auto;padding:14px 14px 40px}
+  .calc-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .calc-top .title{font-size:16px;font-weight:700}
+  .calc-plan{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px}
+  .cp-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .cp-head .name{font-size:14px;font-weight:700}
+  .cp-th{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--sub);padding:2px 0 6px}
+  .cp-tr{display:flex;align-items:center;gap:8px;padding:5px 0}
+  .cp-tr .idx{width:56px;flex:0 0 56px;font-size:13px;color:var(--sub)}
+  .cp-th .idx{width:56px;flex:0 0 56px}
+  .cp-tr input[type=number]{flex:1;height:36px;padding:0 10px;font-size:14px;box-sizing:border-box}
+  .cp-tr .mini-btn{flex:0 0 auto}
+  .cp-foot{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+  .cp-foot .pb{background:#f8f9fb;border-radius:10px;padding:10px 6px;text-align:center}
+  .cp-foot .k{font-size:11px;color:var(--sub)}
+  .cp-foot .v{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+  .cp-foot input{height:34px;width:100%;text-align:center;font-size:15px;font-weight:700;box-sizing:border-box}
+  .cp-add{margin-top:10px;width:100%}
   /* ===== 自绘弹窗：不依赖 WebView 的 alert/confirm ===== */
   .dlg-mask{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;padding:24px;z-index:9999}
   .dlg-mask.show{display:flex}
@@ -90,11 +122,29 @@
   .dlg-acts .dg:active{opacity:.85}
   .toast{position:fixed;left:50%;bottom:56px;transform:translateX(-50%) translateY(10px);background:rgba(31,35,41,.92);color:#fff;font-size:13px;padding:9px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:10000;max-width:80vw;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* ===== 二级菜单：云备份与设置 ===== */
+  .menu-head{display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:14px;font-weight:700}
+  .menu-head .arrow{color:var(--blue);font-weight:600;font-size:12px}
+  .menu-body{display:none;margin-top:12px}
+  .menu-body.open{display:block}
+  .sub-title{font-size:13px;font-weight:700;color:#334155;padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:2px}
+  .row2{display:flex;gap:10px}
+  .sw-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding:10px 12px;background:#f8fafc;border:1px solid var(--line);border-radius:10px}
+  .sw-row .sw-label{font-size:13px;font-weight:600}
+  .sw-row .sw-desc{font-size:11px;color:var(--sub);margin-top:2px}
+  .switch{appearance:none;-webkit-appearance:none;width:46px;height:26px;border-radius:13px;background:#cbd5e1;position:relative;flex:0 0 auto;cursor:pointer;border:none;transition:background .18s}
+  .switch:checked{background:var(--blue)}
+  .switch::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.25);transition:transform .18s}
+  .switch:checked::after{transform:translateX(20px)}
+  .dav-status{font-size:12px;line-height:1.6;margin-top:12px;padding:10px 12px;border-radius:10px;background:#f8fafc;border:1px solid var(--line);color:var(--sub);word-break:break-all}
+  .dav-status.ok{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}
+  .dav-status.err{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
+  .dav-status.run{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>投注盈亏记账 <span class="ver">v3.6</span></h1>
+  <h1>投注盈亏记账 <span class="ver">v3.9</span></h1>
   <div class="risk">说明：本工具仅用于记录每笔投注与每轮盈亏，不提供任何投注建议。输后继续加注（追损）在本金或限额有限时可能造成大额亏损，请理性参与、量力而行。</div>
   <!-- 总览 -->
   <div class="stats">
@@ -121,7 +171,7 @@
       <div class="row" style="display:flex;gap:10px">
         <div style="flex:1;min-width:0">
           <label>日期</label>
-          <input type="date" id="betDate">
+          <input type="text" id="betDate" placeholder="2026-01-01" maxlength="10" inputmode="numeric">
         </div>
         <div style="flex:1;min-width:0">
           <label>投注金额（元）</label>
@@ -187,6 +237,14 @@
     </div>
     <div class="hist-body" id="history-double"></div>
   </div>
+  <!-- 计算器入口（置于轮次记录下方） -->
+  <div class="card" style="display:flex;gap:10px;align-items:center;justify-content:space-between">
+    <div style="flex:1;min-width:0">
+      <div style="font-size:14px;font-weight:700">倍投回本参考表</div>
+      <div class="hint" style="margin-top:2px">逐轮测算累计投入、到手与盈利，仅作参考，不写入记账</div>
+    </div>
+    <button type="button" class="btn btn-ghost" id="openCalc" style="margin-top:0;flex:0 0 auto;width:auto;padding:0 18px">打开</button>
+  </div>
   <div class="card">
     <div class="btn-row">
       <button type="button" class="btn btn-ghost" id="exportBtn">导出 CSV</button>
@@ -195,6 +253,53 @@
     </div>
     <input type="file" id="importFile" accept=".csv,text/csv" hidden>
     <div class="hint">导出的 CSV 可用 Excel / WPS 直接打开编辑；导入会覆盖当前全部记录。</div>
+  </div>
+  <div class="card">
+    <div class="menu-head" id="menuHead">
+      <span class="menu-title">更多 · 云备份与设置</span>
+      <span class="arrow" id="menuArrow">展开 ▼</span>
+    </div>
+    <div class="menu-body" id="menuBody">
+      <!-- 二级菜单：WebDAV 云盘备份 -->
+      <div class="sub-title">WebDAV 云盘备份</div>
+      <label>服务器地址（到目录为止，含最后的 /）</label>
+      <input type="text" id="davUrl" placeholder="https://dav.example.com/remote.php/dav/files/你的账号/备份/" spellcheck="false">
+      <div class="row2">
+        <div style="flex:1;min-width:0">
+          <label>账号</label>
+          <input type="text" id="davUser" placeholder="登录名" spellcheck="false">
+        </div>
+        <div style="flex:1;min-width:0">
+          <label>密码 / 应用密码</label>
+          <input type="password" id="davPass" placeholder="密码">
+        </div>
+      </div>
+      <label>远程文件名</label>
+      <input type="text" id="davFile" placeholder="bet-backup.json" spellcheck="false">
+      <div class="sw-row">
+        <div>
+          <div class="sw-label">每日首次打开自动备份</div>
+          <div class="sw-desc">同一天只备份一次，覆盖云端同名文件</div>
+        </div>
+        <input type="checkbox" id="autoBackup" class="switch">
+      </div>
+      <div class="btn-row" style="margin-top:12px">
+        <button type="button" class="btn btn-ghost" id="davTest">测试连接</button>
+        <button type="button" class="btn btn-ghost" id="davBackup">立即备份</button>
+      </div>
+      <div class="btn-row" style="margin-top:8px">
+        <button type="button" class="btn btn-ghost" id="davRestore">从云端恢复</button>
+        <button type="button" class="btn btn-ghost danger" id="davDelete">删除云端文件</button>
+      </div>
+      <div class="dav-status" id="davStatus">尚未配置。备份文件为 JSON，仅含你的记账数据。</div>
+      <div class="sub-title" style="margin-top:16px">本地备份文件</div>
+      <div class="btn-row">
+        <button type="button" class="btn btn-ghost" id="jsonExport">导出 JSON</button>
+        <button type="button" class="btn btn-ghost" id="jsonImport">导入 JSON</button>
+      </div>
+      <input type="file" id="jsonFile" accept=".json,application/json" hidden>
+      <div class="hint">账号密码只保存在本机浏览器（localStorage），不会上传到任何第三方。坚果云等公有 WebDAV 若不开放跨域（CORS），浏览器会拦截请求，此时请用下方的本地 JSON 备份。</div>
+    </div>
   </div>
   <div class="foot">数据仅保存在本机浏览器（localStorage），清除浏览器数据会一并删除。</div>
 </div>
@@ -209,6 +314,49 @@
   </div>
 </div>
 <div class="toast" id="toastBox"></div>
+<!-- ===== 注单编辑弹窗 ===== -->
+<div class="dlg-mask" id="editMask" role="dialog" aria-modal="true">
+  <div class="dlg edit-sheet">
+    <h3>编辑注单</h3>
+    <label>日期</label>
+    <input type="text" id="editDate" placeholder="2026-01-01" maxlength="10" inputmode="numeric">
+    <label>结果</label>
+    <div class="seg">
+      <label><input type="radio" name="editResult" value="win"><span class="opt opt-win">赢</span></label>
+      <label><input type="radio" name="editResult" value="lose"><span class="opt opt-lose">负</span></label>
+    </div>
+    <div class="row2">
+      <div style="flex:1;min-width:0">
+        <label>投注金额（元）</label>
+        <input type="number" id="editAmount" min="0" step="0.01">
+      </div>
+      <div style="flex:1;min-width:0">
+        <label>赔率（到手÷投入）</label>
+        <input type="number" id="editOdds" min="0" step="0.01">
+      </div>
+    </div>
+    <label>赢后到手金额（含本金，元）</label>
+    <input type="number" id="editPayout" min="0" step="0.01">
+    <label>备注（可选）</label>
+    <input type="text" id="editNote" maxlength="30">
+    <div class="dlg-acts">
+      <button type="button" class="dg" id="editCancel">取消</button>
+      <button type="button" class="dg primary" id="editSave">保存修改</button>
+    </div>
+  </div>
+</div>
+<!-- ===== 倍投回本参考表（二级页面，只读） ===== -->
+<div class="calc-page" id="calcPage">
+  <div class="calc-inner">
+    <div class="calc-top">
+      <button type="button" class="mini-btn" id="calcBack">← 返回</button>
+      <div class="title">倍投回本参考表</div>
+      <button type="button" class="mini-btn danger" id="calcClearAll" style="margin-left:auto">清空全部</button>
+    </div>
+    <div class="risk" style="margin:6px 0 14px">仅用于模拟测算，不会写入记账记录；结果不构成投注建议，请量力而行。</div>
+    <div id="calcBody"></div>
+  </div>
+</div>
 <script>
 (function(){
   var LS_KEY = 'bet_profit_tracker_v2';
@@ -216,7 +364,17 @@
   var PLAN_META = { single:{name:'单关'}, double:{name:'双关'} };
   function pad(x){ return String(x).padStart(2,'0'); }
   function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
-  function weekdayOf(dateStr){ var d=new Date(dateStr+'T00:00:00'); return WD[d.getDay()]; }
+  function weekdayOf(dateStr){ var d=new Date(dateStr+'T00:00:00'); return WD[d.getDay()]||''; }
+  function normDate(s){
+    s=String(s||'').trim();
+    var m=s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+    if(!m) return todayStr();
+    var y=+m[1], mo=+m[2], d=+m[3];
+    if(mo<1||mo>12||d<1||d>31) return todayStr();
+    var dt=new Date(y,mo-1,d);
+    if(dt.getFullYear()!==y||dt.getMonth()!==mo-1||dt.getDate()!==d) return todayStr();
+    return y+'-'+pad(mo)+'-'+pad(d);
+  }
   function freshPlan(){ return { current:{bets:[]}, rounds:[] }; }
   function load(){
     try{
@@ -294,19 +452,25 @@
       + '<span class="left">第 '+(i+1)+' 轮 · '+r.bets.length+' 笔 · '+esc(r.closedAt||'')+'</span>'
       + '<span class="prof '+cls(pr)+'">'+fmt(pr)+'</span>'
       + '</div><div class="round-body">';
-    html += betListHTML(r.bets);
+    html += betListHTML(r.bets, key, i);
     html += '<div style="text-align:right"><button class="del" data-plan="'+key+'" data-del="'+i+'">删除本轮</button></div>';
     return html + '</div></div>';
   }
-  function betListHTML(bets){
-    return bets.map(function(b){
+  function betListHTML(bets, planKey, roundRef){
+    return bets.map(function(b, i){
       var tag = b.result==='win'?'<span class="pos">赢</span>':'<span class="neg">负</span>';
       var oddsTxt = (b.result==='win' && b.odds!=null && n(b.odds)>0) ? ' · 赔率 '+Number(b.odds).toFixed(2) : '';
       var dt = b.date+' '+b.weekday+(b.time?' '+b.time:'');
-      return '<div class="bet"><div>投注 '+fmt(b.amount)+' 元 · '+tag+oddsTxt
+      var ref = ' data-plan="'+planKey+'" data-round="'+roundRef+'"';
+      return '<div class="bet">'
+        + '<div class="bet-main"><div>投注 '+fmt(b.amount)+' 元 · '+tag+oddsTxt
         + (b.note?'<div class="meta">'+esc(b.note)+'</div>':'')
         + '<div class="meta">'+esc(dt)+'</div></div>'
-        + '<div>'+(b.result==='win'?'到手 '+fmt(b.payout):'—')+'</div></div>';
+        + '<div>'+(b.result==='win'?'到手 '+fmt(b.payout):'—')+'</div></div>'
+        + '<div class="bet-actions">'
+        + '<button type="button" class="mini-btn"'+ref+' data-edit-bet="'+i+'">编辑</button>'
+        + '<button type="button" class="mini-btn danger"'+ref+' data-del-bet="'+i+'">删除</button>'
+        + '</div></div>';
     }).join('');
   }
   function currentRoundHTML(key, p){
@@ -321,7 +485,7 @@
       + '<span class="prof '+cls(pr)+'">'+fmt(pr)+'</span>'
       + '</div>'
       + '<div class="round-body">'
-      + betListHTML(cur)
+      + betListHTML(cur, key, 'cur')
       + '<div class="round-sum">本轮投入 '+fmt(invested(cur))+'｜回收 '+fmt(returned(cur))+'｜盈亏 <span class="'+cls(pr)+'">'+fmt(pr)+'</span></div>'
       + '</div></div>';
   }
@@ -408,7 +572,7 @@
     var payout = n(payoutInput.value);
     if(result==='win' && payout<0){ uiAlert('到手金额不能为负'); return; }
     var odds = n(oddsInput.value);
-    var dateStr = el('betDate').value || todayStr();
+    var dateStr = normDate(el('betDate').value);
     var note = el('note').value.trim();
     var bet = {
       amount:amount, result:result, payout:result==='win'?payout:0,
@@ -450,6 +614,12 @@
     if(hh){
       var k = hh.dataset.hist;
       ui.hist[k] = !ui.hist[k];
+      if(!ui.hist[k]){
+        // 收起历史列表时，同时收起该方案下所有轮次明细
+        Object.keys(ui.round).forEach(function(rk){
+          if(rk.indexOf(k+'_') === 0) delete ui.round[rk];
+        });
+      }
       render();
       return;
     }
@@ -463,6 +633,16 @@
       card.classList.toggle('open');
       return;
     }
+    var editB = e.target.closest('[data-edit-bet]');
+    if(editB){
+      openEdit({ plan:editB.dataset.plan, round:editB.dataset.round==='cur'?'cur':Number(editB.dataset.round), idx:Number(editB.dataset.editBet) });
+      return;
+    }
+    var delB = e.target.closest('[data-del-bet]');
+    if(delB){
+      delBet({ plan:delB.dataset.plan, round:delB.dataset.round==='cur'?'cur':Number(delB.dataset.round), idx:Number(delB.dataset.delBet) });
+      return;
+    }
     var del = e.target.closest('[data-del]');
     if(del){
       uiConfirm('确定删除这一轮记录？', function(ok){
@@ -474,6 +654,83 @@
       }, { danger:true, okText:'删除' });
     }
   });
+  // ================= 注单编辑 / 删除 =================
+  var editCtx = null;
+  function resolveBetArr(ctx){
+    var p = state.plans[ctx.plan];
+    if(!p) return null;
+    return ctx.round === 'cur' ? p.current.bets : (p.rounds[ctx.round] ? p.rounds[ctx.round].bets : null);
+  }
+  function getBet(ctx){ var arr = resolveBetArr(ctx); return arr && arr[ctx.idx] ? arr[ctx.idx] : null; }
+  function syncEditResult(){
+    var isWin = document.querySelector('input[name=editResult]:checked').value === 'win';
+    el('editOdds').disabled = !isWin;
+    el('editPayout').disabled = !isWin;
+    el('editOdds').style.opacity = isWin ? '1' : '.5';
+    el('editPayout').style.opacity = isWin ? '1' : '.5';
+  }
+  function openEdit(ctx){
+    var b = getBet(ctx); if(!b) return;
+    editCtx = ctx;
+    el('editDate').value = b.date || todayStr();
+    document.querySelector('input[name=editResult][value="'+b.result+'"]').checked = true;
+    el('editAmount').value = b.amount;
+    el('editOdds').value = b.odds != null ? b.odds : '';
+    el('editPayout').value = b.payout || '';
+    el('editNote').value = b.note || '';
+    syncEditResult();
+    el('editMask').classList.add('show');
+  }
+  function closeEdit(){ el('editMask').classList.remove('show'); editCtx = null; }
+  function saveEdit(){
+    var b = getBet(editCtx);
+    if(!b){ closeEdit(); return; }
+    var amount = n(el('editAmount').value);
+    if(amount <= 0){ uiAlert('金额必须大于 0'); return; }
+    var result = document.querySelector('input[name=editResult]:checked').value;
+    var odds = n(el('editOdds').value), payout = n(el('editPayout').value);
+    var dateStr = normDate(el('editDate').value);
+    b.amount = amount;
+    b.result = result;
+    b.payout = result === 'win' ? payout : 0;
+    b.odds = result === 'win' && odds > 0 ? odds : null;
+    b.note = el('editNote').value.trim();
+    b.date = dateStr;
+    b.weekday = weekdayOf(dateStr);
+    closeEdit();
+    render();
+    toast('已保存修改');
+  }
+  function delBet(ctx){
+    var b = getBet(ctx); if(!b) return;
+    var tag = b.result === 'win' ? '赢' : '负';
+    uiConfirm('确定删除这一笔投注？\n'+fmt(b.amount)+' 元 · '+tag, function(ok){
+      if(!ok) return;
+      var p = state.plans[ctx.plan];
+      var arr = ctx.round === 'cur' ? p.current.bets : p.rounds[ctx.round].bets;
+      arr.splice(ctx.idx, 1);
+      if(ctx.round !== 'cur' && !arr.length){ p.rounds.splice(ctx.round, 1); }
+      ui.round = {};
+      render();
+      toast('已删除该笔投注');
+    }, { danger:true, okText:'删除' });
+  }
+  el('editCancel').addEventListener('click', closeEdit);
+  el('editSave').addEventListener('click', saveEdit);
+  document.querySelectorAll('input[name=editResult]').forEach(function(r){ r.addEventListener('change', syncEditResult); });
+  // 编辑弹窗：金额 / 赔率 / 到手 三者联动
+  var eAmt = el('editAmount'), eOd = el('editOdds'), ePay = el('editPayout');
+  function editAmtLink(){
+    var amt = n(eAmt.value), od = n(eOd.value), pay = n(ePay.value);
+    if(amt <= 0) return;
+    if(od > 0) ePay.value = fmt2(amt*od);
+    else if(pay > 0) eOd.value = fmt2(pay/amt);
+  }
+  function editOdLink(){ var amt=n(eAmt.value), od=n(eOd.value); if(amt>0&&od>0) ePay.value=fmt2(amt*od); }
+  function editPayLink(){ var amt=n(eAmt.value), pay=n(ePay.value); if(amt>0&&pay>0) eOd.value=fmt2(pay/amt); }
+  eAmt.addEventListener('input', editAmtLink);
+  eOd.addEventListener('input', editOdLink);
+  ePay.addEventListener('input', editPayLink);
   // ================= CSV 导入导出 =================
   function csvField(v){ v = String(v==null?'':v); return '"' + v.replace(/"/g,'""') + '"'; }
   function parseCSVLine(line){
@@ -594,6 +851,320 @@
       render();
       toast('已清空全部记录');
     }, { danger:true, okText:'清空' });
+  });
+  // ================= 二级菜单：WebDAV 云盘备份 + 本地 JSON 备份 =================
+  var DAV_CFG_KEY = 'bet_dav_cfg_v1';
+  var DAV_LAST_KEY = 'bet_dav_last_v1';
+  var DAV_DEFAULT = 'bet-backup.json';
+  function davCfg(){
+    var c = null;
+    try{ c = JSON.parse(localStorage.getItem(DAV_CFG_KEY) || 'null'); }catch(e){}
+    if(!c || typeof c !== 'object') c = {};
+    return {
+      url: c.url || '', user: c.user || '', pass: c.pass || '',
+      file: c.file || DAV_DEFAULT, auto: c.auto === undefined ? true : !!c.auto
+    };
+  }
+  function davReadForm(){
+    var c = {
+      url: el('davUrl').value.trim(),
+      user: el('davUser').value.trim(),
+      pass: el('davPass').value,
+      file: (el('davFile').value.trim() || DAV_DEFAULT),
+      auto: !!el('autoBackup').checked
+    };
+    try{ localStorage.setItem(DAV_CFG_KEY, JSON.stringify(c)); }catch(e){}
+    return c;
+  }
+  function davFillForm(){
+    var c = davCfg();
+    el('davUrl').value = c.url;
+    el('davUser').value = c.user;
+    el('davPass').value = c.pass;
+    el('davFile').value = c.file;
+    el('autoBackup').checked = !!c.auto;
+  }
+  function davSetStatus(msg, kind){
+    var n = el('davStatus');
+    n.className = 'dav-status' + (kind ? ' ' + kind : '');
+    n.textContent = msg;
+  }
+  function hm(){ var d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  function davTarget(){
+    var c = davCfg();
+    if(!c.url) return null;
+    return {
+      url: c.url.replace(/\/+$/, '') + '/' + encodeURIComponent(c.file || DAV_DEFAULT),
+      cfg: c
+    };
+  }
+  function davAuth(cfg){
+    var s = (cfg.user || '') + ':' + (cfg.pass || '');
+    try{ return 'Basic ' + btoa(unescape(encodeURIComponent(s))); }catch(e){ return ''; }
+  }
+  function davExplain(code){
+    if(code === 401 || code === 403) return '账号或密码不对（部分服务要用「应用密码」而不是登录密码）';
+    if(code === 404) return '路径不存在：检查服务器地址的目录是否存在、远程文件名是否写对';
+    if(code === 409) return '目标目录不存在，先在网盘里建好该文件夹';
+    if(code === 507) return '云盘空间不足';
+    if(code === 'net') return '请求被拦截或网络不通：多半是服务器未开放跨域（CORS），也可能是地址填错；可改用下方本地 JSON 备份';
+    if(code === 'no-fetch') return '当前浏览器不支持 fetch，无法使用云备份';
+    if(code === 'no-config') return '还没填写 WebDAV 服务器地址';
+    if(code === 'bad-json') return '云端文件不是有效的备份 JSON';
+    if(code === 'bad-shape') return '备份结构不正确，已中止';
+    return 'HTTP ' + code;
+  }
+  function davDo(method, body, cb){
+    var t = davTarget();
+    if(!t){ cb(false, 'no-config'); return; }
+    if(!window.fetch){ cb(false, 'no-fetch'); return; }
+    var opt = { method:method, headers:{ 'Authorization':davAuth(t.cfg) }, cache:'no-store' };
+    if(body != null){ opt.headers['Content-Type'] = 'application/json;charset=utf-8'; opt.body = body; }
+    fetch(t.url, opt).then(function(res){
+      var ok = res.ok, code = res.status;
+      if(cb){ cb(ok, code, res); }
+    }).catch(function(){ if(cb) cb(false, 'net'); });
+  }
+  function davPayload(){
+    return JSON.stringify({
+      app:'bet_profit_tracker', version:'v3.9',
+      savedAt:new Date().toISOString(), state:state
+    });
+  }
+  function davBackup(silent){
+    var t = davTarget();
+    if(!t){ if(!silent) davSetStatus(davExplain('no-config'), 'err'); return; }
+    if(!silent) davSetStatus('正在上传备份…', 'run');
+    davDo('PUT', davPayload(), function(ok, code){
+      if(ok){
+        try{ localStorage.setItem(DAV_LAST_KEY, todayStr()); }catch(e){}
+        davSetStatus('备份成功 · ' + hm() + ' · ' + t.cfg.file, 'ok');
+        if(!silent) toast('已备份到云盘');
+      }else{
+        davSetStatus('备份失败：' + davExplain(code), 'err');
+        if(!silent) toast('备份失败');
+      }
+    });
+  }
+  function applyRestored(st, savedAt){
+    var s = st.plans.single || {}, d = st.plans.double || {};
+    state = { plans:{
+      single:{ current: (s.current && s.current.bets) ? s.current : { bets:[] }, rounds: s.rounds || [] },
+      double:{ current: (d.current && d.current.bets) ? d.current : { bets:[] }, rounds: d.rounds || [] }
+    } };
+    ui.round = {}; ui.hist = { single:false, double:false };
+    render();
+    var when = savedAt ? new Date(savedAt).toLocaleString('zh-CN') : '未知时间';
+    toast('已恢复 ' + when + ' 的备份');
+  }
+  function parseBackup(text){
+    var p;
+    try{ p = JSON.parse(text); }catch(e){ return { err:'bad-json' }; }
+    var st = (p && p.state) ? p.state : (p && p.plans ? p : null);
+    if(!st || !st.plans || !st.plans.single || !st.plans.double) return { err:'bad-shape' };
+    return { ok:true, state:st, savedAt:p.savedAt };
+  }
+  function davRestore(){
+    davSetStatus('正在读取云端备份…', 'run');
+    davDo('GET', null, function(ok, code, res){
+      if(!ok){ davSetStatus('读取失败：' + davExplain(code), 'err'); return; }
+      if(!res || !res.text){ davSetStatus('读取失败：无响应体', 'err'); return; }
+      res.text().then(function(text){
+        var r = parseBackup(text);
+        if(r.err){ davSetStatus(davExplain(r.err), 'err'); return; }
+        var when = r.savedAt ? new Date(r.savedAt).toLocaleString('zh-CN') : '未知时间';
+        uiConfirm('云端备份时间：' + when + '\n恢复会覆盖本机当前全部记录，确定继续？', function(go){
+          if(!go){ davSetStatus('已取消恢复'); return; }
+          applyRestored(r.state, r.savedAt);
+          davSetStatus('已从云端恢复 · ' + hm(), 'ok');
+        });
+      }).catch(function(){ davSetStatus('读取失败：响应体解析出错', 'err'); });
+    });
+  }
+  function davTest(){
+    davSetStatus('正在测试连接…', 'run');
+    davDo('GET', null, function(ok, code){
+      if(ok){ davSetStatus('连接正常，云端已有备份文件，可直接「从云端恢复」', 'ok'); return; }
+      if(code === 404){ davSetStatus('连接正常、路径可用，但云端还没有备份文件（点「立即备份」上传第一份）', 'ok'); return; }
+      davSetStatus('连接失败：' + davExplain(code), 'err');
+    });
+  }
+  function davDelete(){
+    var t = davTarget();
+    if(!t){ davSetStatus(davExplain('no-config'), 'err'); return; }
+    uiConfirm('确定删除云端的 ' + t.cfg.file + '？本机记录不受影响。', function(go){
+      if(!go) return;
+      davDo('DELETE', null, function(ok, code){
+        if(ok){ davSetStatus('云端文件已删除', 'ok'); toast('已删除云端备份'); }
+        else davSetStatus('删除失败：' + davExplain(code), 'err');
+      });
+    }, { danger:true, okText:'删除' });
+  }
+  // 本地 JSON 备份
+  function jsonExport(){
+    var txt = davPayload();
+    var fname = 'bet-backup-' + todayStr().replace(/-/g,'') + '.json';
+    if(window.AndroidBridge && typeof AndroidBridge.exportFile === 'function'){
+      AndroidBridge.exportFile(fname, txt); return;
+    }
+    var blob = new Blob([txt], {type:'application/json;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = fname;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  function jsonImport(file){
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var r = parseBackup(String(ev.target.result));
+      if(r.err){ uiAlert('导入失败：' + davExplain(r.err)); return; }
+      var when = r.savedAt ? new Date(r.savedAt).toLocaleString('zh-CN') : '未知时间';
+      uiConfirm('备份时间：' + when + '\n导入会覆盖本机当前全部记录，确定继续？', function(go){
+        if(!go) return;
+        applyRestored(r.state, r.savedAt);
+        davSetStatus('已从本地 JSON 恢复', 'ok');
+      });
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
+  // 菜单交互
+  var menuOpen = false;
+  el('menuHead').addEventListener('click', function(){
+    menuOpen = !menuOpen;
+    el('menuBody').classList.toggle('open', menuOpen);
+    el('menuArrow').textContent = menuOpen ? '收起 ▲' : '展开 ▼';
+  });
+  ['davUrl','davUser','davPass','davFile'].forEach(function(id){
+    el(id).addEventListener('change', davReadForm);
+    el(id).addEventListener('blur', davReadForm);
+  });
+  el('autoBackup').addEventListener('change', davReadForm);
+  el('davTest').addEventListener('click', davTest);
+  el('davBackup').addEventListener('click', function(){ davReadForm(); davBackup(false); });
+  el('davRestore').addEventListener('click', function(){ davReadForm(); davRestore(); });
+  el('davDelete').addEventListener('click', function(){ davReadForm(); davDelete(); });
+  el('jsonExport').addEventListener('click', jsonExport);
+  el('jsonImport').addEventListener('click', function(){ el('jsonFile').click(); });
+  el('jsonFile').addEventListener('change', function(e){
+    var f = e.target.files[0];
+    if(f) jsonImport(f);
+    e.target.value = '';
+  });
+  davFillForm();
+  // 每日首次打开自动备份一次
+  (function(){
+    var c = davCfg();
+    if(!c.auto || !c.url) return;
+    var last = '';
+    try{ last = localStorage.getItem(DAV_LAST_KEY) || ''; }catch(e){}
+    if(last === todayStr()) return;
+    davBackup(true);
+  })();
+  // ================= 倍投回本参考表（二级页面，只读参考，独立存档） =================
+  var CALC_KEY = 'bet_calc_v1';
+  function defaultCalc(){ return { single:{odds:1.9, rows:[]}, double:{odds:1.9, rows:[]} }; }
+  function loadCalc(){
+    try{
+      var raw = localStorage.getItem(CALC_KEY);
+      if(raw){ var c = JSON.parse(raw); if(c && c.single && c.double) return c; }
+    }catch(e){}
+    return defaultCalc();
+  }
+  var calc = loadCalc();
+  function saveCalc(){ try{ localStorage.setItem(CALC_KEY, JSON.stringify(calc)); }catch(e){} }
+  function planStats(p){
+    var stakes = p.rows.map(function(r){ return n(r.stake); });
+    var total = stakes.reduce(function(a,b){ return a+b; },0);
+    var last = stakes.length ? stakes[stakes.length-1] : 0;
+    var odds = n(p.odds);
+    var pay = last*odds;
+    return { total:total, pay:pay, profit:pay-total };
+  }
+  function refreshFoot(pk){
+    var st = planStats(calc[pk]);
+    var tEl = el('cp-total-'+pk), pEl = el('cp-profit-'+pk);
+    if(tEl) tEl.textContent = fmt(st.total);
+    if(pEl){ pEl.textContent = fmt(st.profit); pEl.className = 'v '+cls(st.profit); }
+  }
+  function planHTML(pk, p){
+    var meta = PLAN_META[pk], st = planStats(p);
+    var rowsHtml = p.rows.map(function(r,i){
+      return '<div class="cp-tr" data-plan="'+pk+'" data-row="'+i+'">'
+        + '<span class="idx">第 '+(i+1)+' 轮</span>'
+        + '<input type="number" data-field="stake" min="0" step="0.01" value="'+(r.stake!=null?r.stake:'')+'">'
+        + '<button type="button" class="mini-btn danger" data-del-row="'+i+'">删</button>'
+        + '</div>';
+    }).join('');
+    var body = p.rows.length ? rowsHtml : '<div class="hint" style="padding:6px 0">暂无轮次，可下方添加，或导入当前轮次注单</div>';
+    return '<div class="calc-plan" data-plan="'+pk+'">'
+      + '<div class="cp-head"><span class="name">'+meta.name+'</span>'
+      + '<span style="display:flex;gap:8px"><button type="button" class="mini-btn" data-import="'+pk+'">导入当前轮次</button>'
+      + '<button type="button" class="mini-btn danger" data-clear="'+pk+'">清空</button></span></div>'
+      + '<div class="cp-th"><span class="idx">轮次</span><span>金额（元）</span></div>'
+      + body
+      + '<div class="cp-foot">'
+      + '<div class="pb"><div class="k">总投入</div><div class="v" id="cp-total-'+pk+'">'+fmt(st.total)+'</div></div>'
+      + '<div class="pb"><div class="k">倍率</div><input type="number" data-field="odds" min="1" step="0.01" value="'+(n(p.odds)>0?n(p.odds):'')+'"></div>'
+      + '<div class="pb"><div class="k">预计盈利</div><div class="v" id="cp-profit-'+pk+'" class="'+cls(st.profit)+'">'+fmt(st.profit)+'</div></div>'
+      + '</div>'
+      + '<button type="button" class="btn btn-ghost cp-add" data-add="'+pk+'">＋ 添加一轮</button>'
+      + '</div>';
+  }
+  function renderCalc(){
+    el('calcBody').innerHTML = planHTML('single', calc.single) + planHTML('double', calc.double);
+  }
+  function openCalc(){ renderCalc(); el('calcPage').classList.add('show'); document.body.classList.add('calc-open'); }
+  function closeCalc(){ el('calcPage').classList.remove('show'); document.body.classList.remove('calc-open'); }
+  el('openCalc').addEventListener('click', openCalc);
+  el('calcBack').addEventListener('click', closeCalc);
+  el('calcClearAll').addEventListener('click', function(){
+    uiConfirm('确定清空单关、双关两张参考表的全部轮次？', function(ok){
+      if(!ok) return;
+      calc.single.rows = []; calc.double.rows = [];
+      renderCalc(); saveCalc(); toast('已清空全部参考表');
+    }, { danger:true, okText:'清空' });
+  });
+  el('calcBody').addEventListener('input', function(e){
+    var t = e.target, f = t.dataset.field;
+    if(f === 'stake'){
+      var row = t.closest('[data-row]'); if(!row) return;
+      var p = calc[row.dataset.plan];
+      p.rows[Number(row.dataset.row)].stake = n(t.value);
+      refreshFoot(row.dataset.plan);
+    } else if(f === 'odds'){
+      var block = t.closest('.calc-plan'); if(!block) return;
+      calc[block.dataset.plan].odds = n(t.value);
+      refreshFoot(block.dataset.plan);
+    }
+    saveCalc();
+  });
+  el('calcBody').addEventListener('click', function(e){
+    var add = e.target.closest('[data-add]');
+    if(add){ calc[add.dataset.add].rows.push({ stake:0 }); renderCalc(); saveCalc(); return; }
+    var del = e.target.closest('[data-del-row]');
+    if(del){
+      var block = del.closest('.calc-plan');
+      block && calc[block.dataset.plan].rows.splice(Number(del.dataset.delRow),1);
+      renderCalc(); saveCalc(); return;
+    }
+    var imp = e.target.closest('[data-import]');
+    if(imp){
+      var pk = imp.dataset.import;
+      var bets = state.plans[pk].current.bets;
+      calc[pk].rows = bets.map(function(b){ return { stake:n(b.amount) }; });
+      renderCalc(); saveCalc();
+      toast(bets.length ? '已导入当前轮次 '+bets.length+' 笔注单' : '当前轮次暂无注单');
+      return;
+    }
+    var cl = e.target.closest('[data-clear]');
+    if(cl){
+      var ck = cl.dataset.clear;
+      calc[ck].rows = [];
+      renderCalc(); saveCalc();
+      toast('已清空'+PLAN_META[ck].name+'参考表');
+    }
   });
   render();
 })();
