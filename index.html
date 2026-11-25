@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- build: v4.0 / 2026-11-25 / 自绘日历方格选择 + 倍投参考表 + 历史折叠复位 + 计算器清空 -->
+<!-- build: v4.7 / 2026-11-25 / 计算器盈利绿色、亏损红色强化；主页与计算器同一套美化；计算器左右并排、汇总三行、取消轮次上限；CSV 收进备份折叠框顶部 -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -17,12 +17,12 @@
   .ver{font-size:11px;font-weight:600;color:#fff;background:var(--blue);border-radius:6px;padding:2px 7px}
   .risk{font-size:12px;color:var(--sub);background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:8px 10px;margin:10px 0 16px}
   .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
-  .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
   .stat .label{font-size:12px;color:var(--sub);margin-bottom:4px}
   .stat .value{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
   .pos{color:var(--green)} .neg{color:var(--red)}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:14px}
-  .card h2{font-size:15px;font-weight:700;margin-bottom:10px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+  .card h2{display:inline-block;font-size:14px;font-weight:700;color:var(--blue);background:#eff6ff;border-radius:8px;padding:4px 10px;margin-bottom:12px}
   label{display:block;font-size:12px;color:var(--sub);margin:8px 0 4px}
   input,select{width:100%;height:42px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font-size:15px;background:#fff;color:var(--text)}
   input:focus,select:focus{outline:none;border-color:var(--blue)}
@@ -40,14 +40,14 @@
   .btn-row .btn{margin-top:0;flex:1}
   .btn-ghost.danger{color:#b91c1c;background:#fef2f2;border-color:#fecaca}
   .profit-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
-  .profit-bar .pb{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 8px;text-align:center}
+  .profit-bar .pb{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 8px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06)}
   .profit-bar .pb .k{font-size:11px;color:var(--sub);margin-bottom:2px}
   .profit-bar .pb .v{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
-  .plan-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
-  .plan-head .name{font-size:15px;font-weight:700}
+  .plan-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding-bottom:8px;margin-bottom:10px;border-bottom:1px dashed var(--line)}
+  .plan-head .name{font-size:14px;font-weight:700;color:var(--blue);background:#eff6ff;border-radius:8px;padding:4px 10px}
   .plan-head .prof{font-weight:700;font-variant-numeric:tabular-nums}
   .cur-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
-  .cur-meta .m{background:#f8f9fb;border-radius:10px;padding:8px;text-align:center}
+  .cur-meta .m{background:#f1f5f9;border-radius:10px;padding:8px;text-align:center}
   .cur-meta .m .k{font-size:11px;color:var(--sub)}
   .cur-meta .m .v{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
   .end-btn{width:100%;height:38px;margin-top:10px;background:#fff;color:#475569;border:1px solid #d1d5db;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer}
@@ -56,7 +56,7 @@
   .hist-head .arrow{color:var(--blue);font-weight:600;font-size:12px}
   .hist-body{display:none;margin-top:4px}
   .hist-body.open{display:block}
-  .round{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
+  .round{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.05)}
   .round-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer}
   .round-head .left{font-size:13px;color:var(--sub)}
   .round-head .prof{font-weight:700;font-variant-numeric:tabular-nums}
@@ -91,24 +91,30 @@
   .calc-page{display:none;position:fixed;inset:0;background:var(--bg);z-index:9000;overflow:auto;-webkit-overflow-scrolling:touch}
   body.calc-open .wrap{display:none}
   .calc-page.show{display:block}
-  .calc-inner{max-width:480px;margin:0 auto;padding:14px 14px 40px}
-  .calc-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .calc-inner{max-width:480px;margin:0 auto;padding:12px 12px 30px}
+  .calc-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
   .calc-top .title{font-size:16px;font-weight:700}
-  .calc-plan{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px}
-  .cp-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-  .cp-head .name{font-size:14px;font-weight:700}
-  .cp-th{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--sub);padding:2px 0 6px}
-  .cp-tr{display:flex;align-items:center;gap:8px;padding:5px 0}
-  .cp-tr .idx{width:56px;flex:0 0 56px;font-size:13px;color:var(--sub)}
-  .cp-th .idx{width:56px;flex:0 0 56px}
-  .cp-tr input[type=number]{flex:1;height:36px;padding:0 10px;font-size:14px;box-sizing:border-box}
-  .cp-tr .mini-btn{flex:0 0 auto}
-  .cp-foot{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
-  .cp-foot .pb{background:#f8f9fb;border-radius:10px;padding:10px 6px;text-align:center}
-  .cp-foot .k{font-size:11px;color:var(--sub)}
-  .cp-foot .v{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
-  .cp-foot input{height:34px;width:100%;text-align:center;font-size:15px;font-weight:700;box-sizing:border-box}
-  .cp-add{margin-top:10px;width:100%}
+  .cp-add[disabled]{opacity:.5;cursor:not-allowed}
+  .calc-plans{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .calc-plan{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+  .cp-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px dashed var(--line)}
+  .cp-head .name{font-size:14px;font-weight:700;padding:4px 10px;border-radius:8px;background:#eff6ff;color:var(--blue)}
+  .cp-head>span:last-child{display:flex;gap:6px;flex-wrap:wrap}
+  .cp-list{display:grid;grid-template-columns:1fr;gap:10px}
+  .cp-tr{display:block}
+  .cp-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .cp-tr .idx{font-size:12px;color:var(--sub)}
+  .cp-tr input[type=number]{width:100%;height:36px;padding:0 10px;font-size:14px;border-radius:10px;background:#f8f9fb}
+  .cp-tr .mini-btn{flex:0 0 auto;padding:3px 8px;font-size:11px;border-radius:8px}
+  .cp-foot{display:grid;grid-template-columns:1fr;gap:7px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+  .cp-foot .pb{background:#f1f5f9;border-radius:10px;padding:9px 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .cp-foot .k{font-size:11px;color:var(--sub);flex:0 0 auto}
+  .cp-foot .v{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;margin-left:auto}
+  .cp-foot .v.pos{color:var(--green)}
+  .cp-foot .v.neg{color:var(--red)}
+  .cp-foot input{height:30px;width:76px;text-align:center;font-size:13px;font-weight:700;box-sizing:border-box;padding:0 2px;-moz-appearance:textfield;appearance:textfield;flex:0 0 auto;background:#fff}
+  .cp-foot input::-webkit-outer-spin-button,.cp-foot input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .cp-add{margin-top:10px;height:38px}
   /* ===== 自绘弹窗：不依赖 WebView 的 alert/confirm ===== */
   .dlg-mask{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;padding:24px;z-index:9999}
   .dlg-mask.show{display:flex}
@@ -154,7 +160,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>投注盈亏记账 <span class="ver">v4.0</span></h1>
+  <h1>投注盈亏记账 <span class="ver">v4.7</span></h1>
   <div class="risk">说明：本工具仅用于记录每笔投注与每轮盈亏，不提供任何投注建议。输后继续加注（追损）在本金或限额有限时可能造成大额亏损，请理性参与、量力而行。</div>
   <!-- 总览 -->
   <div class="stats">
@@ -250,19 +256,10 @@
   <!-- 计算器入口（置于轮次记录下方） -->
   <div class="card" style="display:flex;gap:10px;align-items:center;justify-content:space-between">
     <div style="flex:1;min-width:0">
-      <div style="font-size:14px;font-weight:700">倍投回本参考表</div>
+      <div style="font-size:14px;font-weight:700">投入计算器</div>
       <div class="hint" style="margin-top:2px">逐轮测算累计投入、到手与盈利，仅作参考，不写入记账</div>
     </div>
     <button type="button" class="btn btn-ghost" id="openCalc" style="margin-top:0;flex:0 0 auto;width:auto;padding:0 18px">打开</button>
-  </div>
-  <div class="card">
-    <div class="btn-row">
-      <button type="button" class="btn btn-ghost" id="exportBtn">导出 CSV</button>
-      <button type="button" class="btn btn-ghost" id="importBtn">导入 CSV</button>
-      <button type="button" class="btn btn-ghost danger" id="clearAll">清空全部</button>
-    </div>
-    <input type="file" id="importFile" accept=".csv,text/csv" hidden>
-    <div class="hint">导出的 CSV 可用 Excel / WPS 直接打开编辑；导入会覆盖当前全部记录。</div>
   </div>
   <div class="card">
     <div class="menu-head" id="menuHead">
@@ -270,6 +267,14 @@
       <span class="arrow" id="menuArrow">展开 ▼</span>
     </div>
     <div class="menu-body" id="menuBody">
+      <div class="sub-title">CSV 表格</div>
+      <div class="btn-row">
+        <button type="button" class="btn btn-ghost" id="exportBtn">导出 CSV</button>
+        <button type="button" class="btn btn-ghost" id="importBtn">导入 CSV</button>
+        <button type="button" class="btn btn-ghost danger" id="clearAll">清空全部</button>
+      </div>
+      <input type="file" id="importFile" accept=".csv,text/csv" hidden>
+      <div class="hint">导出的 CSV 可用 Excel / WPS 直接打开编辑；导入会覆盖当前全部记录。</div>
       <!-- 二级菜单：WebDAV 云盘备份 -->
       <div class="sub-title">WebDAV 云盘备份</div>
       <label>服务器地址（到目录为止，含最后的 /）</label>
@@ -373,12 +378,12 @@
     </div>
   </div>
 </div>
-<!-- ===== 倍投回本参考表（二级页面，只读） ===== -->
+<!-- ===== 投入计算器（二级页面，只读） ===== -->
 <div class="calc-page" id="calcPage">
   <div class="calc-inner">
     <div class="calc-top">
       <button type="button" class="mini-btn" id="calcBack">← 返回</button>
-      <div class="title">倍投回本参考表</div>
+      <div class="title">投入计算器</div>
       <button type="button" class="mini-btn danger" id="calcClearAll" style="margin-left:auto">清空全部</button>
     </div>
     <div class="risk" style="margin:6px 0 14px">仅用于模拟测算，不会写入记账记录；结果不构成投注建议，请量力而行。</div>
@@ -1012,7 +1017,7 @@
   }
   function davPayload(){
     return JSON.stringify({
-      app:'bet_profit_tracker', version:'v4.0',
+      app:'bet_profit_tracker', version:'v4.7',
       savedAt:new Date().toISOString(), state:state
     });
   }
@@ -1147,7 +1152,7 @@
     if(last === todayStr()) return;
     davBackup(true);
   })();
-  // ================= 倍投回本参考表（二级页面，只读参考，独立存档） =================
+  // ================= 投入计算器（二级页面，只读参考，独立存档） =================
   var CALC_KEY = 'bet_calc_v1';
   function defaultCalc(){ return { single:{odds:1.9, rows:[]}, double:{odds:1.9, rows:[]} }; }
   function loadCalc(){
@@ -1177,38 +1182,37 @@
     var meta = PLAN_META[pk], st = planStats(p);
     var rowsHtml = p.rows.map(function(r,i){
       return '<div class="cp-tr" data-plan="'+pk+'" data-row="'+i+'">'
-        + '<span class="idx">第 '+(i+1)+' 轮</span>'
+        + '<div class="cp-top"><span class="idx">第 '+(i+1)+' 轮</span>'
+        + '<button type="button" class="mini-btn danger" data-del-row="'+i+'">删</button></div>'
         + '<input type="number" data-field="stake" min="0" step="0.01" value="'+(r.stake!=null?r.stake:'')+'">'
-        + '<button type="button" class="mini-btn danger" data-del-row="'+i+'">删</button>'
         + '</div>';
     }).join('');
-    var body = p.rows.length ? rowsHtml : '<div class="hint" style="padding:6px 0">暂无轮次，可下方添加，或导入当前轮次注单</div>';
+    var body = p.rows.length ? '<div class="cp-list">'+rowsHtml+'</div>' : '<div class="hint" style="padding:6px 0">暂无轮次，可下方添加，或导入当前轮次注单</div>';
     return '<div class="calc-plan" data-plan="'+pk+'">'
       + '<div class="cp-head"><span class="name">'+meta.name+'</span>'
       + '<span style="display:flex;gap:8px"><button type="button" class="mini-btn" data-import="'+pk+'">导入当前轮次</button>'
       + '<button type="button" class="mini-btn danger" data-clear="'+pk+'">清空</button></span></div>'
-      + '<div class="cp-th"><span class="idx">轮次</span><span>金额（元）</span></div>'
       + body
       + '<div class="cp-foot">'
       + '<div class="pb"><div class="k">总投入</div><div class="v" id="cp-total-'+pk+'">'+fmt(st.total)+'</div></div>'
       + '<div class="pb"><div class="k">倍率</div><input type="number" data-field="odds" min="1" step="0.01" value="'+(n(p.odds)>0?n(p.odds):'')+'"></div>'
-      + '<div class="pb"><div class="k">预计盈利</div><div class="v" id="cp-profit-'+pk+'" class="'+cls(st.profit)+'">'+fmt(st.profit)+'</div></div>'
+      + '<div class="pb"><div class="k">预计盈利</div><div class="v '+cls(st.profit)+'" id="cp-profit-'+pk+'">'+fmt(st.profit)+'</div></div>'
       + '</div>'
       + '<button type="button" class="btn btn-ghost cp-add" data-add="'+pk+'">＋ 添加一轮</button>'
       + '</div>';
   }
   function renderCalc(){
-    el('calcBody').innerHTML = planHTML('single', calc.single) + planHTML('double', calc.double);
+    el('calcBody').innerHTML = '<div class="calc-plans">' + planHTML('single', calc.single) + planHTML('double', calc.double) + '</div>';
   }
   function openCalc(){ renderCalc(); el('calcPage').classList.add('show'); document.body.classList.add('calc-open'); }
   function closeCalc(){ el('calcPage').classList.remove('show'); document.body.classList.remove('calc-open'); }
   el('openCalc').addEventListener('click', openCalc);
   el('calcBack').addEventListener('click', closeCalc);
   el('calcClearAll').addEventListener('click', function(){
-    uiConfirm('确定清空单关、双关两张参考表的全部轮次？', function(ok){
+    uiConfirm('确定清空单关、双关两张表的全部轮次？', function(ok){
       if(!ok) return;
       calc.single.rows = []; calc.double.rows = [];
-      renderCalc(); saveCalc(); toast('已清空全部参考表');
+      renderCalc(); saveCalc(); toast('已清空全部表');
     }, { danger:true, okText:'清空' });
   });
   el('calcBody').addEventListener('input', function(e){
@@ -1227,7 +1231,10 @@
   });
   el('calcBody').addEventListener('click', function(e){
     var add = e.target.closest('[data-add]');
-    if(add){ calc[add.dataset.add].rows.push({ stake:0 }); renderCalc(); saveCalc(); return; }
+    if(add){
+      var ap = calc[add.dataset.add];
+      ap.rows.push({ stake:0 }); renderCalc(); saveCalc(); return;
+    }
     var del = e.target.closest('[data-del-row]');
     if(del){
       var block = del.closest('.calc-plan');
@@ -1248,7 +1255,7 @@
       var ck = cl.dataset.clear;
       calc[ck].rows = [];
       renderCalc(); saveCalc();
-      toast('已清空'+PLAN_META[ck].name+'参考表');
+      toast('已清空'+PLAN_META[ck].name+'表');
     }
   });
   render();
