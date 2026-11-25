@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- build: v3.9 / 2026-11-24 / 倍投回本参考表 + 历史折叠复位 + 计算器清空 -->
+<!-- build: v4.0 / 2026-11-25 / 自绘日历方格选择 + 倍投参考表 + 历史折叠复位 + 计算器清空 -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -120,6 +120,16 @@
   .dlg-acts .dg.primary{background:var(--blue);border-color:var(--blue);color:#fff}
   .dlg-acts .dg.danger{background:var(--red);border-color:var(--red);color:#fff}
   .dlg-acts .dg:active{opacity:.85}
+  .date-field{cursor:pointer;background:#f8fafc}
+  .dp-cal{max-width:340px}
+  .dp-nav{display:flex;align-items:center;justify-content:space-between;margin:10px 0}
+  .dp-title{font-weight:700;font-size:15px}
+  .dp-week,.dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .dp-week span{text-align:center;font-size:11px;color:var(--sub);padding:4px 0}
+  .dp-cell{height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:14px;cursor:pointer}
+  .dp-cell.empty{visibility:hidden}
+  .dp-cell.sel{background:var(--blue);color:#fff;font-weight:700}
+  .dp-cell:active{opacity:.85}
   .toast{position:fixed;left:50%;bottom:56px;transform:translateX(-50%) translateY(10px);background:rgba(31,35,41,.92);color:#fff;font-size:13px;padding:9px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:10000;max-width:80vw;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   /* ===== 二级菜单：云备份与设置 ===== */
@@ -144,7 +154,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>投注盈亏记账 <span class="ver">v3.9</span></h1>
+  <h1>投注盈亏记账 <span class="ver">v4.0</span></h1>
   <div class="risk">说明：本工具仅用于记录每笔投注与每轮盈亏，不提供任何投注建议。输后继续加注（追损）在本金或限额有限时可能造成大额亏损，请理性参与、量力而行。</div>
   <!-- 总览 -->
   <div class="stats">
@@ -171,7 +181,7 @@
       <div class="row" style="display:flex;gap:10px">
         <div style="flex:1;min-width:0">
           <label>日期</label>
-          <input type="text" id="betDate" placeholder="2026-01-01" maxlength="10" inputmode="numeric">
+          <input type="text" id="betDate" readonly class="date-field" placeholder="点击选择日期">
         </div>
         <div style="flex:1;min-width:0">
           <label>投注金额（元）</label>
@@ -319,7 +329,7 @@
   <div class="dlg edit-sheet">
     <h3>编辑注单</h3>
     <label>日期</label>
-    <input type="text" id="editDate" placeholder="2026-01-01" maxlength="10" inputmode="numeric">
+    <input type="text" id="editDate" readonly class="date-field" placeholder="点击选择日期">
     <label>结果</label>
     <div class="seg">
       <label><input type="radio" name="editResult" value="win"><span class="opt opt-win">赢</span></label>
@@ -342,6 +352,24 @@
     <div class="dlg-acts">
       <button type="button" class="dg" id="editCancel">取消</button>
       <button type="button" class="dg primary" id="editSave">保存修改</button>
+    </div>
+  </div>
+</div>
+<!-- ===== 自绘日历选择面板（不依赖 WebView 原生控件 / 下拉框） ===== -->
+<div class="dlg-mask" id="dateMask" role="dialog" aria-modal="true">
+  <div class="dlg dp-cal">
+    <h3>选择日期</h3>
+    <div class="dp-nav">
+      <button type="button" class="mini-btn" id="dpPrev">‹</button>
+      <div class="dp-title" id="dpTitle"></div>
+      <button type="button" class="mini-btn" id="dpNext">›</button>
+    </div>
+    <div class="dp-week"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+    <div class="dp-grid" id="dpGrid"></div>
+    <div class="dlg-acts">
+      <button type="button" class="dg" id="dpToday">今天</button>
+      <button type="button" class="dg" id="dpCancel">取消</button>
+      <button type="button" class="dg primary" id="dpOk">确定</button>
     </div>
   </div>
 </div>
@@ -672,7 +700,7 @@
   function openEdit(ctx){
     var b = getBet(ctx); if(!b) return;
     editCtx = ctx;
-    el('editDate').value = b.date || todayStr();
+    el('editDate').value = normDate(b.date);
     document.querySelector('input[name=editResult][value="'+b.result+'"]').checked = true;
     el('editAmount').value = b.amount;
     el('editOdds').value = b.odds != null ? b.odds : '';
@@ -731,6 +759,63 @@
   eAmt.addEventListener('input', editAmtLink);
   eOd.addEventListener('input', editOdLink);
   ePay.addEventListener('input', editPayLink);
+  // ================= 自绘日历选择面板（不依赖 WebView 原生控件 / 下拉框） =================
+  var dateCb = null, dpSel = { y:0, m:0, d:0 }, dpView = { y:0, m:0 };
+  function dpDays(y, m){ return new Date(y, m, 0).getDate(); }
+  function renderDpCalendar(){
+    var y = dpView.y, m = dpView.m, max = dpDays(y, m);
+    var first = new Date(y, m - 1, 1).getDay();
+    var html = '';
+    for(var i = 0; i < first; i++) html += '<div class="dp-cell empty"></div>';
+    for(var d = 1; d <= max; d++){
+      var sel = (dpSel.y === y && dpSel.m === m && dpSel.d === d) ? ' sel' : '';
+      html += '<div class="dp-cell'+sel+'" data-day="'+d+'">'+d+'</div>';
+    }
+    var total = first + max;
+    while(total % 7 !== 0){ html += '<div class="dp-cell empty"></div>'; total++; }
+    el('dpGrid').innerHTML = html;
+    el('dpTitle').textContent = y + '年' + m + '月';
+  }
+  function shiftMonth(delta){
+    dpView.m += delta;
+    if(dpView.m < 1){ dpView.m = 12; dpView.y--; }
+    if(dpView.m > 12){ dpView.m = 1; dpView.y++; }
+    renderDpCalendar();
+  }
+  function openDatePicker(current, cb){
+    var cur = normDate(current), p = cur.split('-');
+    dpSel = { y:+p[0], m:+p[1], d:+p[2] };
+    dpView = { y:dpSel.y, m:dpSel.m };
+    renderDpCalendar();
+    dateCb = cb;
+    el('dateMask').classList.add('show');
+  }
+  function closeDatePicker(){ el('dateMask').classList.remove('show'); dateCb = null; }
+  el('dpPrev').addEventListener('click', function(){ shiftMonth(-1); });
+  el('dpNext').addEventListener('click', function(){ shiftMonth(1); });
+  el('dpGrid').addEventListener('click', function(e){
+    var cell = e.target.closest('[data-day]'); if(!cell) return;
+    dpSel = { y:dpView.y, m:dpView.m, d:+cell.dataset.day };
+    renderDpCalendar();
+  });
+  el('dpToday').addEventListener('click', function(){
+    var t = new Date();
+    dpSel = { y:t.getFullYear(), m:t.getMonth()+1, d:t.getDate() };
+    dpView = { y:dpSel.y, m:dpSel.m };
+    renderDpCalendar();
+  });
+  el('dpCancel').addEventListener('click', closeDatePicker);
+  el('dpOk').addEventListener('click', function(){
+    var iso = dpSel.y + '-' + pad(dpSel.m) + '-' + pad(dpSel.d);
+    if(dateCb) dateCb(iso);
+    closeDatePicker();
+  });
+  el('betDate').addEventListener('click', function(){
+    openDatePicker(el('betDate').value, function(iso){ el('betDate').value = iso; });
+  });
+  el('editDate').addEventListener('click', function(){
+    openDatePicker(el('editDate').value, function(iso){ el('editDate').value = iso; });
+  });
   // ================= CSV 导入导出 =================
   function csvField(v){ v = String(v==null?'':v); return '"' + v.replace(/"/g,'""') + '"'; }
   function parseCSVLine(line){
@@ -927,7 +1012,7 @@
   }
   function davPayload(){
     return JSON.stringify({
-      app:'bet_profit_tracker', version:'v3.9',
+      app:'bet_profit_tracker', version:'v4.0',
       savedAt:new Date().toISOString(), state:state
     });
   }
