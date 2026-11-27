@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- build: v1.2 / 2026-11-26 / 主页免责说明移至页面最底部；移除投入/回报率计算器页面的说明提示框；归档超10轮内部滚动；计算器删除/清空二次确认 -->
+<!-- build: v1.3 / 2026-11-27 / 日历今天日期独立描边突出；计算器二级页面接入历史栈，系统返回/手势返回回到主页并恢复滚动位置 -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -149,6 +149,8 @@
   .dp-cell{height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:14px;cursor:pointer}
   .dp-cell.empty{visibility:hidden}
   .dp-cell.sel{background:var(--blue);color:#fff;font-weight:700}
+  .dp-cell.today:not(.sel){box-shadow:inset 0 0 0 1.5px var(--blue);color:var(--blue);font-weight:700}
+  .dp-cell.today.sel{box-shadow:inset 0 0 0 1.5px var(--blue)}
   .dp-cell:active{opacity:.85}
   .toast{position:fixed;left:50%;bottom:56px;transform:translateX(-50%) translateY(10px);background:rgba(31,35,41,.92);color:#fff;font-size:13px;padding:9px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:10000;max-width:80vw;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -174,7 +176,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>投注盈亏记账 <span class="ver">1.2</span></h1>
+  <h1>投注盈亏记账 <span class="ver">1.3</span></h1>
   <!-- 总览 -->
   <div class="stats">
     <div class="stat"><div class="label">累计总盈亏</div><div class="value" id="totalProfit">0.00</div></div>
@@ -803,11 +805,13 @@
   function renderDpCalendar(){
     var y = dpView.y, m = dpView.m, max = dpDays(y, m);
     var first = new Date(y, m - 1, 1).getDay();
+    var now = new Date(), ty = now.getFullYear(), tm = now.getMonth()+1, td = now.getDate();
     var html = '';
     for(var i = 0; i < first; i++) html += '<div class="dp-cell empty"></div>';
     for(var d = 1; d <= max; d++){
       var sel = (dpSel.y === y && dpSel.m === m && dpSel.d === d) ? ' sel' : '';
-      html += '<div class="dp-cell'+sel+'" data-day="'+d+'">'+d+'</div>';
+      var today = (ty === y && tm === m && td === d) ? ' today' : '';
+      html += '<div class="dp-cell'+sel+today+'" data-day="'+d+'">'+d+'</div>';
     }
     var total = first + max;
     while(total % 7 !== 0){ html += '<div class="dp-cell empty"></div>'; total++; }
@@ -1050,7 +1054,7 @@
   }
   function davPayload(){
     return JSON.stringify({
-      app:'bet_profit_tracker', version:'1.2',
+      app:'bet_profit_tracker', version:'1.3',
       savedAt:new Date().toISOString(), state:state
     });
   }
@@ -1237,8 +1241,34 @@
   function renderCalc(){
     el('calcBody').innerHTML = '<div class="calc-plans">' + planHTML('single', calc.single) + planHTML('double', calc.double) + '</div>';
   }
-  function openCalc(){ renderCalc(); el('calcPage').classList.add('show'); document.body.classList.add('calc-open'); }
-  function closeCalc(){ el('calcPage').classList.remove('show'); document.body.classList.remove('calc-open'); }
+  // ===== 二级页面历史栈：系统返回手势/浏览器返回键先关闭计算器，不跳出网页；并恢复主页滚动位置 =====
+  var savedScroll = 0, histPushed = false;
+  function activeOverlay(){
+    if(el('calcPage').classList.contains('show')) return 'calcPage';
+    if(el('ratePage').classList.contains('show')) return 'ratePage';
+    return null;
+  }
+  function showOverlay(id){
+    savedScroll = window.scrollY;
+    el(id).classList.add('show');
+    document.body.classList.add('calc-open');
+    histPushed = false;
+    try{ history.pushState({ov:id}, ''); histPushed = true; }catch(e){ histPushed = false; }
+  }
+  function hideOverlay(id){
+    el(id).classList.remove('show');
+    document.body.classList.remove('calc-open');
+    window.scrollTo(0, savedScroll);
+  }
+  window.addEventListener('popstate', function(){
+    var ov = activeOverlay();
+    if(ov){ histPushed = false; hideOverlay(ov); }
+  });
+  function openCalc(){ renderCalc(); showOverlay('calcPage'); }
+  function closeCalc(){
+    hideOverlay('calcPage');
+    if(histPushed){ histPushed = false; try{ history.back(); }catch(e){} }
+  }
   el('openCalc').addEventListener('click', openCalc);
   el('calcBack').addEventListener('click', closeCalc);
   el('calcClearAll').addEventListener('click', function(){
@@ -1366,8 +1396,11 @@
       if(re){ re.textContent = pct(rr.rate); re.className = 'rt-v '+pc; }
     });
   }
-  function openRate(){ renderRate(); el('ratePage').classList.add('show'); document.body.classList.add('calc-open'); }
-  function closeRate(){ el('ratePage').classList.remove('show'); document.body.classList.remove('calc-open'); }
+  function openRate(){ renderRate(); showOverlay('ratePage'); }
+  function closeRate(){
+    hideOverlay('ratePage');
+    if(histPushed){ histPushed = false; try{ history.back(); }catch(e){} }
+  }
   el('openRate').addEventListener('click', openRate);
   el('rateBack').addEventListener('click', closeRate);
   el('rateClearAll').addEventListener('click', function(){
